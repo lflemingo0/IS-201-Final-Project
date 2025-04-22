@@ -1,0 +1,92 @@
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+}
+
+.common {
+    text-align: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+nav {
+    background-color: black;
+    padding: 0% 20px; /* Reduced padding for a simpler look */
+    margin: 0;
+    display: flex; /* Aligns links to the left */
+    justify-content: flex-start; /* Aligns content to the left */
+}
+
+nav a {
+    font-size: 16px;
+    font-weight: normal; /* Simplified font weight */
+    text-decoration: none;
+    color: white;
+    padding: 10px 15px; /* Reduced padding for a cleaner look */
+    margin-right: 20px; /* Space between links */
+}
+
+nav a:hover {
+    background-color: lightgray;
+    border-radius: 5px; /* Slight border-radius for a more natural feel */
+}
+
+.header {
+    height: 250px;
+    background-color: rgb(1, 94, 1);
+    color: white;
+    line-height: 150px;
+    font-size: 3.5vw;
+    width: 100%;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+h2 {
+    font-size: 20px;
+    text-align: center;
+    font-weight: 500;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+h3 {
+    font-size: 30px;
+    margin-bottom: 0;
+}
+
+ol {
+    font-size: 20px;
+    padding-left: 20px;
+}
+
+ol li {
+    font-weight: bold;
+    font-size: 20px;
+}
+
+ul {
+    font-size: 16px;
+    padding-left: 20px;
+}
+
+ul li {
+    font-size: 16px;
+    font-weight: normal;
+}
+
+body {
+    background-color: whitesmoke;
+}

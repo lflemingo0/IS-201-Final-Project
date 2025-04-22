@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🐍 Snake Game</title>
+  <style>
+    :root {
+      --grid-size: 15; /* Grid size */
+      --cell-size: 30px; /* Cell size */
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
+    }
+
+    h1 {
+      margin: 20px;
+      color: #00695c;
+      font-size: 48px; /* Increased font size for the title */
+      text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3); /* Optional shadow effect for visibility */
+    }
+
+    #scoreBoard {
+      font-size: 20px;
+      margin-bottom: 10px;
+      color: #004d40;
+    }
+
+    #gameArea {
+      display: grid;
+      grid-template-columns: repeat(var(--grid-size), var(--cell-size));
+      grid-template-rows: repeat(var(--grid-size), var(--cell-size));
+      background-color: #263238;
+      border: 4px solid #004d40;
+      border-radius: 10px;
+    }
+
+    .cell {
+      width: var(--cell-size);
+      height: var(--cell-size);
+      background-color: #263238;
+    }
+
+    .snake {
+      background-color: #2e7d32;
+      border-radius: 4px;
+    }
+
+    .snake-head {
+      background-color: #43a047;
+      position: relative;
+    }
+
+    .snake-head::before,
+    .snake-head::after {
+      content: "";
+      position: absolute;
+      top: 5px;
+      width: 5px;
+      height: 5px;
+      background-color: black;
+      border-radius: 50%;
+    }
+
+    .snake-head::before {
+      left: 5px;
+    }
+
+    .snake-head::after {
+      right: 5px;
+    }
+
+    .apple {
+      background-color: #ef5350;
+      border-radius: 50%;
+      position: relative;
+    }
+
+    .apple::after {
+      content: "";
+      position: absolute;
+      top: -5px;
+      left: 7px;
+      width: 5px;
+      height: 10px;
+      background-color: #6d4c41;
+      border-radius: 2px;
+    }
+
+    /* Game Over Pop-Up Styles */
+    #gameOverPopup {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #ffffff;
+      border: 3px solid #004d40;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      font-size: 24px;
+      color: #004d40;
+      display: none;
+      box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+      }
+      100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>🐍 Snake Game</h1>
+  <div id="scoreBoard">Score: 0 | High Score: 0 | Level: 1</div>
+  <div id="gameArea"></div>
+
+  <!-- Custom Game Over Pop-Up -->
+  <div id="gameOverPopup">
+    <p>Game Over!</p>
+    <p id="finalScore">Final Score: 0</p>
+    <button onclick="startNewRound()">Play Again</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script>
+    const gridSize = 15;
+    const gameArea = document.getElementById("gameArea");
+    const scoreBoard = document.getElementById("scoreBoard");
+    const cells = [];
+    const gameOverPopup = document.getElementById("gameOverPopup");
+    const finalScoreDisplay = document.getElementById("finalScore");
+
+    let snake = [];
+    let direction = 1;  // Initial movement direction (right)
+    let apple = null;  // Apple will be generated once game starts
+    let interval;
+    let score = 0;
+    let highScore = 0;
+    let level = 1;
+    let gameStarted = false;
+    let brokeHighScore = false;
+
+    // Create grid cells
+    for (let i = 0; i < gridSize * gridSize; i++) {
+      const cell = document.createElement("div");
+      cell.classList.add("cell");
+      gameArea.appendChild(cell);
+      cells.push(cell);
+    }
+
+    // Draw the snake and apple
+    function drawSnake() {
+      cells.forEach(cell => cell.className = "cell");
+      snake.forEach((pos, i) => {
+        cells[pos].classList.add(i === snake.length - 1 ? "snake-head" : "snake");
+      });
+      if (apple !== null) {
+        cells[apple].classList.add("apple");
+      }
+    }
+
+    // Move snake
+    function moveSnake() {
+      const head = snake[snake.length - 1];
+      let newHead = head + direction;
+
+      // Wall collision
+      if (
+        newHead < 0 ||
+        newHead >= gridSize * gridSize ||
+        (direction === 1 && head % gridSize === gridSize - 1) ||
+        (direction === -1 && head % gridSize === 0)
+      ) {
+        return gameOver();
+      }
+
+      if (snake.includes(newHead)) return gameOver();
+
+      snake.push(newHead);
+
+      if (newHead === apple) {
+        score++;
+        if (score > highScore) {
+          brokeHighScore = true;
+          highScore = score;
+        }
+        if (score % 5 === 0) {
+          level++;
+          increaseSpeed(); // Increase the speed when level up
+        }
+        updateScore();
+        generateApple();
+      } else {
+        snake.shift();
+      }
+
+      drawSnake();
+    }
+
+    // Generate new apple
+    function generateApple() {
+      do {
+        apple = Math.floor(Math.random() * gridSize * gridSize);
+      } while (snake.includes(apple));  // Ensure apple doesn't spawn on the snake
+    }
+
+    // Update score and level display
+    function updateScore() {
+      scoreBoard.textContent = `Score: ${score} | High Score: ${highScore} | Level: ${level}`;
+    }
+
+    // Game over function
+    function gameOver() {
+      clearInterval(interval);
+      finalScoreDisplay.textContent = `Final Score: ${score}`;
+      gameOverPopup.style.display = "block";
+      gameOverPopup.style.animation = "fadeIn 0.5s ease-out forwards";
+
+      if (brokeHighScore) {
+        confetti({
+          particleCount: 150,
+          spread: 100,
+          origin: { y: 0.6 }
+        });
+        brokeHighScore = false;
+      }
+
+      gameStarted = false;
+    }
+
+    // Start a new round
+    function startNewRound() {
+      gameOverPopup.style.display = "none";  // Hide the game over popup
+      initializeGame();  // Re-initialize the game
+    }
+
+    // Increase the speed based on level
+    function increaseSpeed() {
+      clearInterval(interval);
+      interval = setInterval(moveSnake, 200 - (level - 1) * 30); // Speed up the game as level increases
+    }
+
+    // Initialize the game (show snake and apple)
+    function initializeGame() {
+      snake = [Math.floor(gridSize * gridSize / 2)];  // Start snake in the middle
+      direction = 1;  // Start moving to the right
+      score = 0;
+      level = 1;
+      brokeHighScore = false;
+      generateApple();
+      updateScore();
+      drawSnake();
+    }
+
+    // Start the game when the first arrow key is pressed
+    document.addEventListener("keydown", e => {
+      if (!gameStarted && (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+        gameStarted = true;
+        interval = setInterval(moveSnake, 200); // Start moving snake at 200ms interval
+      }
+
+      if (!gameStarted) return;  // Don't process movements if game isn't started
+
+      if (e.key === "ArrowUp" && direction !== gridSize) direction = -gridSize;
+      else if (e.key === "ArrowDown" && direction !== -gridSize) direction = gridSize;
+      else if (e.key === "ArrowLeft" && direction !== 1) direction = -1;
+      else if (e.key === "ArrowRight" && direction !== -1) direction = 1;
+    });
+
+    // Initialize the game on load
+    initializeGame();
+
+  </script>
+</body>
+</html>
